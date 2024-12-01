@@ -82,10 +82,6 @@ def obtener_todos_proveedores():
     conexion.close()
     return proveedores
 
-
-
-
-
 def crear_tabla_productos():
     """Crea la tabla de productos si no existe."""
     conexion = crear_conexion()
@@ -243,18 +239,28 @@ def obtener_todas_las_ventas():
     return ventas
 
 def eliminar_venta(idventa):
-    """Elimina una venta y sus detalles."""
-    conexion = crear_conexion()
-    cursor = conexion.cursor()
-
-    # Eliminar los detalles de la venta
-    cursor.execute("DELETE FROM detalle_ventas WHERE idventa = ?", (idventa,))
-    # Eliminar la venta
-    cursor.execute("DELETE FROM ventas WHERE idventa = ?", (idventa,))
-
-    conexion.commit()
-    conexion.close()
-    print(f"Venta con ID {idventa} eliminada exitosamente.")
+    try:
+        conexion = crear_conexion()
+        cursor = conexion.cursor()
+        
+        # Primero eliminamos los detalles de la venta
+        cursor.execute("DELETE FROM detalle_ventas WHERE idventa = ?", (idventa,))
+        
+        # Luego eliminamos la venta (corregido de 'id' a 'idventa')
+        cursor.execute("DELETE FROM ventas WHERE idventa = ?", (idventa,))
+        
+        conexion.commit()
+        conexion.close()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar venta: {str(e)}")
+        # En caso de error, intentamos cerrar la conexión
+        try:
+            conexion.rollback()
+            conexion.close()
+        except:
+            pass
+        return False
 
 def editar_venta(idventa, nuevos_productos):
     """
@@ -289,7 +295,16 @@ def editar_venta(idventa, nuevos_productos):
     conexion.close()
     print(f"Venta con ID {idventa} actualizada exitosamente.")
 
-
+def insertar_detalle_venta(idventa, idproducto, cantidad, subtotal):
+    """Inserta un detalle de venta en la base de datos."""
+    conexion = crear_conexion()
+    cursor = conexion.cursor()
+    cursor.execute("""
+        INSERT INTO detalle_ventas (idventa, idproducto, cantidad, subtotal) 
+        VALUES (?, ?, ?, ?)
+    """, (idventa, idproducto, cantidad, subtotal))
+    conexion.commit()
+    conexion.close()
 
 crear_tabla_proveedores()
 crear_tabla_productos()
